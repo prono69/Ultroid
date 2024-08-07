@@ -1,5 +1,5 @@
 # Ultroid - UserBot
-# Copyright (C) 2021-2022 TeamUltroid
+# Copyright (C) 2021-2023 TeamUltroid
 #
 # This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
 # PLease read the GNU Affero General Public License in
@@ -41,7 +41,7 @@ from telethon.tl.types import (
     InputMessagesFilterDocument,
 )
 from telethon.utils import get_peer_id
-
+from decouple import config, RepositoryEnv
 from .. import LOGS, ULTConfig
 from ..fns.helper import download_file, inline_mention, updater
 
@@ -89,13 +89,18 @@ async def autoupdate_local_database():
 def update_envs():
     """Update Var. attributes to udB"""
     from .. import udB
-
-    for envs in list(os.environ):
+    _envs = [*list(os.environ)]
+    if ".env" in os.listdir("."):
+        [_envs.append(_) for _ in list(RepositoryEnv(config._find_file(".")).data)]
+    for envs in _envs:
         if (
             envs in ["LOG_CHANNEL", "BOT_TOKEN", "BOTMODE", "DUAL_MODE", "language"]
             or envs in udB.keys()
         ):
-            udB.set_key(envs, os.environ[envs])
+            if _value := os.environ.get(envs):
+                udB.set_key(envs, _value)
+            else:
+                udB.set_key(envs, config.config.get(envs))
 
 
 async def startup_stuff():
@@ -435,7 +440,6 @@ async def fetch_ann():
 
     get_ = udB.get_key("OLDANN") or []
     chat_id = udB.get_key("LOG_CHANNEL")
-
     try:
         updts = await async_searcher(
             "https://ultroid-api.vercel.app/announcements", post=True, re_json=True
@@ -502,7 +506,7 @@ async def ready():
             LOGS.exception(ef)
     if spam_sent and not spam_sent.media:
         udB.set_key("LAST_UPDATE_LOG_SPAM", spam_sent.id)
-    await fetch_ann()
+# TODO:    await fetch_ann()
 
 
 async def WasItRestart(udb):

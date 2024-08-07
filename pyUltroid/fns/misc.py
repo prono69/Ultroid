@@ -1,5 +1,5 @@
 # Ultroid - UserBot
-# Copyright (C) 2021-2022 TeamUltroid
+# Copyright (C) 2021-2023 TeamUltroid
 #
 # This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
 # PLease read the GNU Affero General Public License in
@@ -272,7 +272,7 @@ async def get_synonyms_or_antonyms(word, type_of_words):
 
 
 class Quotly:
-    _API = "https://bot.lyo.su/quote/generate"
+    _API = "https://quoteampi.onrender.com/generate"
     _entities = {
         types.MessageEntityPhone: "phone_number",
         types.MessageEntityMention: "mention",

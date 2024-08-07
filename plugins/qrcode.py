@@ -1,5 +1,5 @@
 # Ultroid - UserBot
-# Copyright (C) 2021-2022 TeamUltroid
+# Copyright (C) 2021-2023 TeamUltroid
 #
 # This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
 # PLease read the GNU Affero General Public License in
@@ -44,7 +44,7 @@ async def cd(e):
     if reply and (reply.sticker or reply.photo):
         cimg = await reply.download_media()
     elif ultroid_bot.me.photo and not ultroid_bot.me.photo.has_video:
-        cimg = await e.client.get_profile_photos(ultroid_bot.uid, limit=1)[0]
+        cimg = (await e.client.get_profile_photos(ultroid_bot.uid, limit=1))[0]
 
     kk = await e.eor(get_string("com_1"))
     img = cimg or default

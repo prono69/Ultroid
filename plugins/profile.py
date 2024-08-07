@@ -1,5 +1,5 @@
 # Ultroid - UserBot
-# Copyright (C) 2021-2022 TeamUltroid
+# Copyright (C) 2021-2023 TeamUltroid
 #
 # This file is a part of < https://github.com/TeamUltroid/Ultroid/ >
 # PLease read the GNU Affero General Public License in
@@ -83,7 +83,7 @@ async def _(ult):
     file = await ult.client.upload_file(replfile)
     try:
         if "pic" in mediainfo(reply_message.media):
-            await ult.client(UploadProfilePhotoRequest(file))
+            await ult.client(UploadProfilePhotoRequest(file=file))
         else:
             await ult.client(UploadProfilePhotoRequest(video=file))
         await eod(ok, "`My Profile Photo has Successfully Changed !`")
