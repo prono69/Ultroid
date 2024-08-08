@@ -12,7 +12,7 @@ import time
 import random
 from logging import Logger
  
-from telethon import TelegramClient
+from telethonpatch import TelegramClient
 from telethon import utils as telethon_utils
 from telethon.errors import (
     AccessTokenExpiredError,
