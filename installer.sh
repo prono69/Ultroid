@@ -45,17 +45,15 @@ check_dependencies() {
         # check if any of ffmpeg, mediainfo, neofetch, git is not installed
         if ! command -v ffmpeg &>/dev/null || ! command -v mediainfo &>/dev/null || ! command -v neofetch &>/dev/null || ! command -v git &>/dev/null; then
             echo -e "Some dependencies aren't installed. Please install ffmpeg, mediainfo, neofetch and git to run this bot." >&2
-            apt-get -qq -o=Dpkg::Use-Pty=0 update
-            apt-get install -qq -o=Dpkg::Use-Pty=0 python3 python3-pip ffmpeg mediainfo neofetch git -y
             exit 1
         fi
     fi
     if [ -x "$(command -v apt-get)" ]; then
         echo -e "Installing dependencies..."
         # check if any of ffmpeg, mediainfo, neofetch, git is not installed via dpkg
-        if ! dpkg -l | grep -q ffmpeg || dpkg -l | grep -q mediainfo || dpkg -l | grep -q neofetch || dpkg -l | grep -q git; then
-             apt-get -qq -o=Dpkg::Use-Pty=0 update
-             apt-get install -qq -o=Dpkg::Use-Pty=0 python3 python3-pip ffmpeg mediainfo neofetch git -y
+        if dpkg -l | grep -q ffmpeg || dpkg -l | grep -q mediainfo || dpkg -l | grep -q neofetch || dpkg -l | grep -q git; then
+             sudo apt-get -qq -o=Dpkg::Use-Pty=0 update
+             sudo apt-get install -qq -o=Dpkg::Use-Pty=0 python3 python3-pip ffmpeg mediainfo neofetch git -y
         fi
     elif [ -x "$(command -v pacman)" ]; then
         echo -e "Installing dependencies..."
