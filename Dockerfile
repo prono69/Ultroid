@@ -4,7 +4,7 @@
 # Please read the GNU Affero General Public License in <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
 
 # Use a specific version of Python for consistency
-FROM python:latest
+FROM python:3.12.5-bullseye
 
 # Set timezone
 ENV TZ=Asia/Kolkata
