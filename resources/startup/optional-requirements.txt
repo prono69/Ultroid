@@ -15,6 +15,7 @@ google-api-python-client
 htmlwebshot
 lottie
 lxml
+motor
 numpy>=1.21.2
 oauth2client
 opencv-python-headless
