@@ -6,49 +6,49 @@
 # <https://www.github.com/TeamUltroid/Ultroid/blob/main/LICENSE/>.
 """
 ✘ Commands Available -
-
+ 
 • `{i}kickme` : Leaves the group.
-
+ 
 • `{i}date` : Show Calender.
-
+ 
 • `{i}listreserved`
     List all usernames (channels/groups) you own.
-
+ 
 • `{i}stats` : See your profile stats.
-
+ 
 • `{i}paste` - `Include long text / Reply to text file.`
-
+ 
 • `{i}info <username/userid/chatid>`
     Reply to someone's msg.
-
+ 
 • `{i}invite <username/userid>`
     Add user to the chat.
-
+ 
 • `{i}rmbg <reply to pic>`
     Remove background from that picture.
-
+ 
 • `{i}telegraph <reply to media/text>`
     Upload media/text to telegraph.
-
+ 
 • `{i}json <reply to msg>`
     Get the json encoding of the message.
-
+ 
 • `{i}suggest <reply to message> or <poll title>`
     Create a Yes/No poll for the replied suggestion.
-
+ 
 • `{i}ipinfo <ipAddress>` : Get info about that IP address.
-
+ 
 • `{i}cpy <reply to message>`
    Copy the replied message, with formatting. Expires in 24hrs.
 • `{i}pst`
    Paste the copied message, with formatting.
-
+ 
 • `{i}thumb <reply file>` : Download the thumbnail of the replied file.
-
+ 
 • `{i}getmsg <message link>`
   Get messages from chats with forward/copy restrictions.
 """
-
+ 
 import calendar
 import html
 import io
@@ -56,21 +56,21 @@ import os
 import pathlib
 import time
 from datetime import datetime as dt
-
+ 
 try:
     from PIL import Image
 except ImportError:
     Image = None
-
+ 
 from pyUltroid._misc._assistant import asst_cmd
 from pyUltroid.dB.gban_mute_db import is_gbanned
 from pyUltroid.fns.tools import get_chat_and_msgid
-
+ 
 try:
     from telegraph import upload_file as uf
 except ImportError:
     uf = None
-
+ 
 from telethon.errors.rpcerrorlist import ChatForwardsRestrictedError, UserBotError
 from telethon.events import NewMessage
 from telethon.tl.custom import Dialog
@@ -92,9 +92,9 @@ from telethon.tl.types import (
     User,
 )
 from telethon.utils import get_peer_id
-
+ 
 from pyUltroid.fns.info import get_chat_info
-
+ 
 from . import (
     HNDLR,
     LOGS,
@@ -115,20 +115,83 @@ from . import (
     udB,
     ultroid_cmd,
 )
-
+ 
+import html
+ 
+import motor.motor_asyncio
+import pytz
+from telethon import events, types
+from telethon.tl.functions.channels import GetParticipantsRequest
+from telethon.tl.types import (
+    ChannelParticipantsSearch,
+    User,
+    UserStatusOffline,
+    UserStatusOnline,
+    UserStatusRecently,
+)
+ 
+from . import *
+ 
+# lastSeendB = f"{udB.get_key('MONg')}"
+ 
+# MongoDB client setup
+mongo_client = motor.motor_asyncio.AsyncIOMotorClient(udB.get_key("MONg"))
+db = mongo_client["User_Status"]
+collection = db["user_data"]
+ 
+# Define the UTC timezone and Perth timezone
+utc_tz = pytz.utc
+perth_tz = pytz.timezone(udB.get_key("TIMEZONE")) or pytz.timezone("Asia/Kolkata")
+ 
+ 
+async def mention_user(user_id):
+    entity = await nimbus_bot.get_entity(user_id)
+    mention = get_display_name(entity)
+    escaped_mention = html.escape(mention)
+    permalink = f"<a href='tg://user?id={entity.id}'>{escaped_mention}</a>"
+    return permalink
+ 
+ 
+async def last_online_info(event, user_id):
+    user = await event.client.get_entity(user_id)
+    mention_text = inline_mention(user)
+ 
+    if not user.bot:
+        user.status
+ 
+        try:
+            db_user = await collection.find_one({"user_id": user.id})
+            if db_user:
+                db_user.get("first_seen")
+                last_online_db = db_user.get("last_online_time")
+                if last_online_db:
+                    last_online_db = last_online_db.replace(tzinfo=utc_tz).astimezone(
+                        perth_tz
+                    )
+                    readable_last_online = last_online_db.strftime(
+                        "%d/%m/%Y %I:%M:%S %p %Z%z"
+                    )
+                    return f"{readable_last_online}"
+            return f"\n Status: <code>Unknown or unsupported</code>"
+        except Exception as e:
+            LOGS.error(f"Error: {e}")
+    else:
+        return f"<b>User: {mention_text} (<code>{user.id}</code>)</b> is a bot and their status is not tracked."
 # =================================================================#
-
+ 
+awst = pytz.timezone(udB.get_key("TIMEZONE"))
+ 
 TMP_DOWNLOAD_DIRECTORY = "resources/downloads/"
-
+ 
 _copied_msg = {}
-
-
+ 
+ 
 @ultroid_cmd(pattern="kickme$", fullsudo=True)
 async def leave(ult):
     await ult.eor(f"`{ult.client.me.first_name} has left this group, bye!!.`")
     await ult.client(LeaveChannelRequest(ult.chat_id))
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="date$",
 )
@@ -138,8 +201,8 @@ async def date(event):
     d = dt.now().strftime("Date - %B %d, %Y\nTime- %H:%M:%S")
     k = calendar.month(y, m)
     await event.eor(f"`{k}\n\n{d}`")
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="listreserved$",
 )
@@ -152,8 +215,8 @@ async def _(event):
         for channel_obj in result.chats
     )
     await event.eor(output_str)
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="stats$",
 )
@@ -181,7 +244,7 @@ async def stats(
                 admin_in_broadcast_channels += 1
             if entity.creator:
                 creator_in_channels += 1
-
+ 
         elif (isinstance(entity, Channel) and entity.megagroup) or isinstance(
             entity, Chat
         ):
@@ -190,12 +253,12 @@ async def stats(
                 admin_in_groups += 1
             if entity.creator:
                 creator_in_groups += 1
-
+ 
         elif isinstance(entity, User):
             private_chats += 1
             if entity.bot:
                 bots += 1
-
+ 
         unread_mentions += dialog.unread_mentions_count
         unread += dialog.unread_count
     stop_time = time.time() - start_time
@@ -227,8 +290,8 @@ async def stats(
     response += f"**Total Stickers Pack Installed :** `{sp_count}`\n\n"
     response += f"**__It Took:__** {stop_time:.02f}s \n"
     await ok.edit(response)
-
-
+ 
+ 
 @ultroid_cmd(pattern="paste( (.*)|$)", manager=True, allow_all=True)
 async def _(event):
     try:
@@ -274,8 +337,8 @@ async def _(event):
     except BaseException as e:
         LOGS.exception(e)
         await xx.edit(reply_text)
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="info( (.*)|$)",
     manager=True,
@@ -292,6 +355,7 @@ async def _(event):
     else:
         user = event.chat_id
     xx = await event.eor(get_string("com_1"))
+    user_id = user
     try:
         _ = await event.client.get_entity(user)
     except Exception as er:
@@ -315,6 +379,18 @@ async def _(event):
         full_user = (await event.client(GetFullUserRequest(user))).full_user
     except Exception as er:
         return await xx.edit(f"ERROR : {er}")
+    user = await event.client.get_entity(user_id)
+    user_status = user.status
+    if isinstance(user_status, UserStatusOffline):
+        ostatus = await last_online_info(event, user.id)
+        last_online_status = f"<b>•Last Online</b>: <code>{ostatus}</code>"
+    elif isinstance(user_status, UserStatusOnline):
+        last_online_status = "<b>•Last Online</b>: <code>Currently Online</code>"
+    else:
+        try:
+            last_online_status = f"<b>•Last Online</b>: <code>{await last_online_info(event, user.id)}</code>"
+        except Exception:
+            last_online_status = f"<b>•Last Online</b>: <code>Unknown</code>"
     user = _
     user_photos = (
         await event.client.get_profile_photos(user.id, limit=0)
@@ -348,6 +424,7 @@ async def _(event):
 <b>••Is Pʀᴇᴍɪᴜᴍ</b>: <code>{}</code>
 <b>••Is A Bᴏᴛ</b>: <code>{}</code>
 <b>••Gʀᴏᴜᴘs Iɴ Cᴏᴍᴍᴏɴ</b>: <code>{}</code>
+{}
 """.format(
         user_id,
         user_id,
@@ -361,6 +438,7 @@ async def _(event):
         user.premium,
         user.bot,
         common_chats,
+        last_online_status,
     )
     if chk := is_gbanned(user_id):
         caption += f"""<b>••Gʟᴏʙᴀʟʟʏ Bᴀɴɴᴇᴅ</b>: <code>True</code>
@@ -375,8 +453,8 @@ async def _(event):
         silent=True,
     )
     await xx.delete()
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="invite( (.*)|$)",
     groups_only=True,
@@ -413,8 +491,8 @@ async def _(ult):
                 )
             except Exception as e:
                 await xx.edit(str(e))
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="rmbg($| (.*))",
 )
@@ -469,8 +547,8 @@ async def abs_rmbg(event):
     os.remove(out)
     os.remove(wbn)
     await xx.delete()
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="telegraph( (.*)|$)",
 )
@@ -509,8 +587,8 @@ async def telegraphcmd(event):
     await xx.eor(
         f"Pasted to Telegraph : [Telegraph]({makeit['url']})", link_preview=False
     )
-
-
+ 
+ 
 @ultroid_cmd(pattern="json( (.*)|$)")
 async def _(event):
     reply_to_id = None
@@ -556,8 +634,8 @@ async def _(event):
             await event.delete()
     else:
         await event.eor(f"```{msg or None}```")
-
-
+ 
+ 
 @ultroid_cmd(pattern="suggest( (.*)|$)", manager=True)
 async def sugg(event):
     sll = event.text.split(maxsplit=1)
@@ -592,8 +670,8 @@ async def sugg(event):
     except Exception as e:
         return await eod(event, f"`Oops, you can't send polls here!\n\n{e}`")
     await event.delete()
-
-
+ 
+ 
 @ultroid_cmd(pattern="ipinfo( (.*)|$)")
 async def ipinfo(event):
     ip = event.text.split()
@@ -618,7 +696,7 @@ async def ipinfo(event):
             event,
             """
 **IP Details Fetched.**
-
+ 
 **IP:** `{}`
 **City:** `{}`
 **Region:** `{}`
@@ -640,8 +718,8 @@ async def ipinfo(event):
         err = det["error"]["title"]
         msg = det["error"]["message"]
         await event.eor(f"ERROR:\n{err}\n{msg}", time=5)
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="cpy$",
 )
@@ -651,20 +729,20 @@ async def copp(event):
         return await event.eor(f"Use `{HNDLR}cpy` as reply to a message!", time=5)
     _copied_msg["CLIPBOARD"] = msg
     await event.eor(f"Copied. Use `{HNDLR}pst` to paste!", time=10)
-
-
+ 
+ 
 @asst_cmd(pattern="pst$")
 async def pepsodent(event):
     await toothpaste(event)
-
-
+ 
+ 
 @ultroid_cmd(
     pattern="pst$",
 )
 async def colgate(event):
     await toothpaste(event)
-
-
+ 
+ 
 async def toothpaste(event):
     try:
         await event.respond(_copied_msg["CLIPBOARD"])
@@ -676,8 +754,8 @@ async def toothpaste(event):
     except Exception as ex:
         return await event.eor(str(ex), time=5)
     await event.delete()
-
-
+ 
+ 
 @ultroid_cmd(pattern="thumb$")
 async def thumb_dl(event):
     reply = await event.get_reply_message()
@@ -690,8 +768,8 @@ async def thumb_dl(event):
     m = await x.download_media(thumb=-1)
     await event.reply(file=m)
     os.remove(m)
-
-
+ 
+ 
 @ultroid_cmd(pattern="getmsg( ?(.*)|$)")
 async def get_restriced_msg(event):
     match = event.pattern_match.group(1).strip()
