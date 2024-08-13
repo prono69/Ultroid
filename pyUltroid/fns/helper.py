@@ -46,9 +46,11 @@ import asyncio
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, wraps
+from typing import Any, List, Optional
 
 from telethon.helpers import _maybe_await
 from telethon.tl import types
+from telethon.tl.custom import Message
 from telethon.utils import get_display_name
 
 from .._misc import CMD_HELP
@@ -617,3 +619,12 @@ async def shutdown(ult):
             )
     else:
         sys.exit()
+
+        
+        
+# ------------------User Extraction----------------#
+ 
+ 
+async def extract_user(message: Message, args: List[str]) -> Optional[int]:
+    prev_message = await message.get_reply_message()
+    return prev_message.sender_id if prev_message else None        
