@@ -41,7 +41,7 @@ from telethon.tl.types import DocumentAttributeAudio
 from pyUltroid.fns.misc import google_search
 from pyUltroid.fns.tools import get_google_images, saavn_search
 
-from . import LOGS, async_searcher, con, eod, fast_download, get_string, ultroid_cmd
+from . import LOGS, async_searcher, con, eod, fast_download, get_string, ultroid_cmd, udB
 
 
 @ultroid_cmd(
@@ -110,6 +110,8 @@ async def google(event):
 @ultroid_cmd(pattern="img( (.*)|$)")
 async def goimg(event):
     query = event.pattern_match.group(1).strip()
+    if not udB.get_key("SERPAPI"):
+        return await event.eor("Error: SERPAPI not set please set a SERP API")
     if not query:
         return await event.eor(get_string("autopic_1"))
     nn = await event.eor(get_string("com_1"))

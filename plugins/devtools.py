@@ -43,7 +43,7 @@ fn = functions
 
 
 @ultroid_cmd(
-    pattern="sysinfo$",
+    pattern="(sysinfo|neofetch)$",
 )
 async def _(e):
     xx = await e.eor(get_string("com_1"))
@@ -76,8 +76,14 @@ async def _(event):
         return await event.eor(get_string("devs_1"), time=10)
     xx = await event.eor(get_string("com_1"))
     reply_to_id = event.reply_to_msg_id or event.id
+    d_time = time.perf_counter()
+    d_time = (time.perf_counter() - d_time) * 1000
     stdout, stderr = await bash(cmd, run_code=1)
-    OUT = f"**☞ BASH\n\n• COMMAND:**\n`{cmd}` \n\n"
+    timeform = time_formatter(d_time)
+    if timeform == "0s":
+        await asyncio.sleep(0.6)
+        timeform = f"{d_time:.3f}ms"
+    OUT = f"**☞ BASH** (__{timeform}__)\n{cmd}\n\n"
     err, out = "", ""
     if stderr:
         err = f"**• ERROR:** \n`{stderr}`\n\n"
